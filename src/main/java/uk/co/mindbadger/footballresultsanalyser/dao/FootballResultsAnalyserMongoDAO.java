@@ -217,13 +217,40 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 
 	@Override
 	public List<Fixture<String>> getFixturesForTeamInDivisionInSeason(Season<String> season, Division<String> division, Team<String> team) {
-		throw new RuntimeException("Not implemented yet!");
+		List<Fixture<String>> fixtures = new ArrayList<Fixture<String>> ();
+		
+		DBCollection mongoFixures = db.getCollection(MONGO_FIXTURE);
+		
+		DBObject homeQuery = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
+			.append(DIV_ID, division.getDivisionIdAsString())
+			.append(HOME_TEAM_ID, team.getTeamIdAsString());
+		
+		DBObject awayQuery = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
+			.append(DIV_ID, division.getDivisionIdAsString())
+			.append(AWAY_TEAM_ID, team.getTeamIdAsString());
+		
+		BasicDBList or = new BasicDBList();
+		or.add(homeQuery);
+		or.add(awayQuery);
+		
+		DBObject query = new BasicDBObject("$or", or);
+		
+		DBCursor fixturesCursor = mongoFixures.find(query);
+		
+		while(fixturesCursor.hasNext()) {
+			DBObject fixtureObject = fixturesCursor.next();
+			Fixture<String> fixture = mapMongoToFixture (fixtureObject);
+			fixtures.add(fixture);
+		}
+		
+		return fixtures;
 	}
 
 	private Fixture<String> mapMongoToFixture (DBObject mongoObject) {
 		String seasonNumber = mongoObject.get(SSN_NUM).toString();
 		String homeTeamId = mongoObject.get(HOME_TEAM_ID).toString();
 		String awayTeamId = mongoObject.get(AWAY_TEAM_ID).toString();
+		String id = mongoObject.get(ID).toString();
 		
 		String fixtureDateAsString = mongoObject.get(FIXTURE_DATE).toString();
 		Calendar fixtureDate = Calendar.getInstance(); //TODO convert the string into a data
@@ -248,6 +275,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		fixture.setFixtureDate(fixtureDate);
 		fixture.setHomeGoals(homeGoals);
 		fixture.setAwayGoals(awayGoals);
+		fixture.setFixtureId(id);
 		
 		return fixture;
 	}
