@@ -81,7 +81,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			basicObject.append(values[i].getKey(), values[i].getValue());
 		}
 		mongoCollection.insert(basicObject);
-		return ((ObjectId) basicObject.get(ID)).toString();
+		Object objectId = basicObject.get(ID);
+		return objectId.toString();
 	}
 	
 	@Override
@@ -176,7 +177,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCollection mongoDivisions = db.getCollection(MONGO_DIVISION);		
 		DBCursor divisionsCursor = mongoDivisions.find();
 		
-		if(divisionsCursor.hasNext()) {
+		while(divisionsCursor.hasNext()) {
 			DBObject divisionObject = divisionsCursor.next();
 			Division<String> division = mapMongoToDivision (divisionObject);
 			divisions.put(division.getDivisionId(), division);
@@ -200,7 +201,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCollection mongoTeams = db.getCollection(MONGO_TEAM);		
 		DBCursor teamsCursor = mongoTeams.find();
 		
-		if(teamsCursor.hasNext()) {
+		while(teamsCursor.hasNext()) {
 			DBObject teamObject = teamsCursor.next();
 			Team<String> newTeam = mapMongoToTeam (teamObject);
 			teams.put(newTeam.getTeamId(), newTeam);
@@ -209,13 +210,13 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return teams;
 	}
 
-	@Override
-	public Set<SeasonDivision<String>> getDivisionsForSeason(int seasonNumber) {
-		throw new RuntimeException("Not implemented yet!");
-	}
+//	@Override
+//	public Set<SeasonDivision<String>> getDivisionsForSeason(int seasonNumber) {
+//		throw new RuntimeException("Not implemented yet!");
+//	}
 
 	@Override
-	public List<Fixture<String>> getFixturesForTeamInDivisionInSeason(int seasonNumber, int divisionId, int teamId) {
+	public List<Fixture<String>> getFixturesForTeamInDivisionInSeason(Season<String> season, Division<String> division, Team<String> team) {
 		throw new RuntimeException("Not implemented yet!");
 	}
 
@@ -305,8 +306,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return null;
 	}
 
-	//TODO Should be part of the interface
-	private Division<String> getDivision(String divId) {
+	@Override
+	public Division<String> getDivision(String divId) {
 		DBCollection mongoDivisions = db.getCollection(MONGO_DIVISION);
 		DBObject query = new BasicDBObject(ID, divId);
 		DBCursor divisionsCursor = mongoDivisions.find(query);
@@ -317,8 +318,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return null;
 	}
 	
-	//TODO Should be part of the interface
-	private Team<String> getTeam(String teamId) {
+	@Override
+	public Team<String> getTeam(String teamId) {
 		DBCollection mongoTeams = db.getCollection(MONGO_TEAM);
 		DBObject query = new BasicDBObject(ID, teamId);
 		DBCursor teamsCursor = mongoTeams.find(query);
@@ -336,7 +337,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCollection mongoSeasons = db.getCollection(MONGO_SEASON);		
 		DBCursor seasonsCursor = mongoSeasons.find();
 		
-		if(seasonsCursor.hasNext()) {
+		while(seasonsCursor.hasNext()) {
 			DBObject seasonObject = seasonsCursor.next();
 			Season<String> newSeason = mapMongoToSeason (seasonObject);
 			seasons.add(newSeason);
@@ -345,10 +346,10 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return seasons;	
 	}
 
-	@Override
-	public Set<SeasonDivisionTeam<String>> getTeamsForDivisionInSeason(int arg0,int arg1) {
-		throw new RuntimeException("Not implemented yet!");
-	}
+//	@Override
+//	public Set<SeasonDivisionTeam<String>> getTeamsForDivisionInSeason(int arg0,int arg1) {
+//		throw new RuntimeException("Not implemented yet!");
+//	}
 
 	@Override
 	public List<Fixture<String>> getUnplayedFixturesBeforeToday() {
