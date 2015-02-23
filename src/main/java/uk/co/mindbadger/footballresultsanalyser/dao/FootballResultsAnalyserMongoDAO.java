@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,10 +103,15 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 
 	@Override
 	public Fixture<String> addFixture(Season<String> season, Calendar fixtureDate, Division<String> division, Team<String> homeTeam, Team<String> awayTeam, Integer homeGoals, Integer awayGoals) {
+		Date date = null;
+		if (fixtureDate != null) {
+			date = fixtureDate.getTime();
+		}
+		
 		String fixtureId = addMongoRecord(MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
 				kv(HOME_TEAM_ID, homeTeam.getTeamId()),
 				kv(AWAY_TEAM_ID, awayTeam.getTeamId()),
-				kv(FIXTURE_DATE, fixtureDate.getTime()),
+				kv(FIXTURE_DATE, date),
 				kv(DIV_ID, division.getDivisionId()),
 				kv(HOME_GOALS, homeGoals),
 				kv(AWAY_GOALS, awayGoals));
@@ -252,18 +258,28 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		String awayTeamId = mongoObject.get(AWAY_TEAM_ID).toString();
 		String id = mongoObject.get(ID).toString();
 		
-		String fixtureDateAsString = mongoObject.get(FIXTURE_DATE).toString();
-		Calendar fixtureDate = Calendar.getInstance(); //TODO convert the string into a data
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-		try {
-			fixtureDate.setTime(sdf.parse(fixtureDateAsString));
-		} catch (ParseException e) {
-			throw new RuntimeException (e);
+		Calendar fixtureDate = null;
+		String fixtureDateAsString = null;
+		if (mongoObject.get(FIXTURE_DATE) != null) {
+			fixtureDateAsString = mongoObject.get(FIXTURE_DATE).toString();
+			fixtureDate = Calendar.getInstance(); //TODO convert the string into a data
+			SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
+			try {
+				fixtureDate.setTime(sdf.parse(fixtureDateAsString));
+			} catch (ParseException e) {
+				throw new RuntimeException (e);
+			}
 		}
 		
 		String divId = mongoObject.get(DIV_ID).toString();
-		Integer homeGoals = Integer.parseInt(mongoObject.get(HOME_GOALS).toString());
-		Integer awayGoals = Integer.parseInt(mongoObject.get(AWAY_GOALS).toString());
+		Integer homeGoals = null;
+		if (mongoObject.get(HOME_GOALS) != null) {
+			homeGoals = Integer.parseInt(mongoObject.get(HOME_GOALS).toString());
+		}
+		Integer awayGoals = null;
+		if (mongoObject.get(AWAY_GOALS) != null) {
+			awayGoals = Integer.parseInt(mongoObject.get(AWAY_GOALS).toString());
+		}
 		
 		Season<String> season = getSeason(Integer.parseInt(seasonNumber));
 		Team<String> homeTeam = getTeam(homeTeamId);

@@ -247,4 +247,40 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (0, fixturesForSsn2Div2Tm1.size());
 
 	}
+	
+	@Test
+	public void shouldFindFixturesWithNoDates () {
+		// Given
+		Season<String> season1 = dao.addSeason(SEASON1);
+		Season<String> season2 = dao.addSeason(SEASON2);
+		
+		Calendar fixtureDate1 = Calendar.getInstance(); fixtureDate1.set(Calendar.DAY_OF_MONTH, 4);
+		Calendar fixtureDate2 = Calendar.getInstance(); fixtureDate2.set(Calendar.DAY_OF_MONTH, 7);
+		
+		Division<String> division1 = dao.addDivision(DIVISION1);
+		Division<String> division2 = dao.addDivision(DIVISION2);
+		
+		Team<String> team1 = dao.addTeam(TEAM1);
+		Team<String> team2 = dao.addTeam(TEAM2);
+		Team<String> team3 = dao.addTeam(TEAM3);
+		Team<String> team4 = dao.addTeam(TEAM4);
+		
+		// When
+		Fixture<String> fixture1 = dao.addFixture(season1, fixtureDate1, division1, team1, team2, 2, 1);
+		Fixture<String> fixture2 = dao.addFixture(season1, fixtureDate1, division1, team3, team4, 2, 1);
+		Fixture<String> fixture3 = dao.addFixture(season1, fixtureDate2, division1, team4, team1, 2, 1);
+
+		Fixture<String> fixture4 = dao.addFixture(season2, null, division1, team1, team2, null, null);
+		Fixture<String> fixture5 = dao.addFixture(season2, fixtureDate1, division2, team3, team4, 2, 1);
+		Fixture<String> fixture6 = dao.addFixture(season2, null, division1, team2, team1, null, null);
+		Fixture<String> fixture7 = dao.addFixture(season2, fixtureDate2, division2, team4, team3, 2, 1);
+		
+		// Then
+		List<Fixture<String>> fixturesWithNoDate = dao.getFixturesWithNoFixtureDate();
+		assertEquals (2, fixturesWithNoDate.size());
+		
+		assertEquals(fixture4.getFixtureId(), fixturesWithNoDate.get(0).getFixtureId());
+		assertEquals(fixture6.getFixtureId(), fixturesWithNoDate.get(1).getFixtureId());	
+	}
+
 }
