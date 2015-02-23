@@ -282,5 +282,4 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals(fixture4.getFixtureId(), fixturesWithNoDate.get(0).getFixtureId());
 		assertEquals(fixture6.getFixtureId(), fixturesWithNoDate.get(1).getFixtureId());	
 	}
-
 }

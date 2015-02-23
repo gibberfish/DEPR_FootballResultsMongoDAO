@@ -90,11 +90,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	public Division<String> addDivision(String divisionName) {
 		String divId = addMongoRecord(MONGO_DIVISION, kv(DIV_NAME, divisionName));
 		
-//		DBCollection mongoDivisions = db.getCollection(MONGO_DIVISION);
-//		BasicDBObject mongoDivision = new BasicDBObject(DIV_NAME, divisionName); 
-//		mongoDivisions.insert(mongoDivision);
-//		ObjectId id = (ObjectId)mongoDivision.get( ID );
-		
 		Division<String> division = domainObjectFactory.createDivision(divisionName);
 		division.setDivisionId(divId);
 		
@@ -116,17 +111,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 				kv(HOME_GOALS, homeGoals),
 				kv(AWAY_GOALS, awayGoals));
 		
-//		DBCollection mongoFixtures = db.getCollection(MONGO_FIXTURE);
-//		BasicDBObject mongoFixture = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
-//			.append(HOME_TEAM_ID, homeTeam.getTeamId())
-//			.append(AWAY_TEAM_ID, awayTeam.getTeamId())
-//			.append(FIXTURE_DATE, fixtureDate.getTime())
-//			.append(DIV_ID, division.getDivisionId())
-//			.append(HOME_GOALS, homeGoals)
-//			.append(AWAY_GOALS, awayGoals)	;
-//		mongoFixtures.insert(mongoFixture);
-//		ObjectId id = (ObjectId)mongoFixture.get( ID );
-		
 		Fixture<String> fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
 		fixture.setDivision(division);
 		fixture.setFixtureDate(fixtureDate);
@@ -140,9 +124,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	@Override
 	public Season<String> addSeason(Integer seasonNumber) {
 		addMongoRecord(MONGO_SEASON, kv(ID, seasonNumber));
-//		DBCollection mongoSeasons = db.getCollection("season");
-//		BasicDBObject mongoSeason = new BasicDBObject(ID, seasonNumber);
-//		mongoSeasons.insert(mongoSeason);
 		
 		Season<String> season = domainObjectFactory.createSeason(seasonNumber);
 		
@@ -152,10 +133,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	@Override
 	public Team<String> addTeam(String teamName) {
 		String teamId = addMongoRecord(MONGO_TEAM, kv(TEAM_NAME, teamName));
-//		DBCollection mongoTeams = db.getCollection(MONGO_TEAM);
-//		BasicDBObject mongoTeam = new BasicDBObject(TEAM_NAME, teamName); 
-//		mongoTeams.insert(mongoTeam);
-//		ObjectId id = (ObjectId)mongoTeam.get( ID );
 		
 		Team<String> team = domainObjectFactory.createTeam(teamName);
 		team.setTeamId(teamId);
@@ -317,15 +294,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			DBObject fixtureObject = fixturesCursor.next();
 			Fixture<String> fixture = mapMongoToFixture (fixtureObject);
 			
-//			String seasonNumber = (String) fixtureObject.get(SSN_NUM);
-//			String homeTeamId = (String) fixtureObject.get(HOME_TEAM_ID);
-//			String awayTeamId = (String) fixtureObject.get(AWAY_TEAM_ID);
-//			String fixtureDate = (String) fixtureObject.get(FIXTURE_DATE);
-//			String divId = (String) fixtureObject.get(DIV_ID);
-//			String homeGoals = (String) fixtureObject.get(HOME_GOALS);
-//			String awayGoals = (String) fixtureObject.get(AWAY_GOALS);
-			//Fixture<String> fixture = domainObjectFactory.createFixture(arg0, arg1, arg2);
-
 			fixtures.add(fixture);
 		}
 		
