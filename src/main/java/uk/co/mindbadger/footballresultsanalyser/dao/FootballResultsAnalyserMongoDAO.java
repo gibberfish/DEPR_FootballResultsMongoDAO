@@ -73,8 +73,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 					kv(HOME_GOALS, homeGoals),
 					kv(AWAY_GOALS, awayGoals));
 			
-			System.out.println("NEW FIXTURE: " + fixtureId);
-			
 			fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
 			fixture.setDivision(division);
 			fixture.setFixtureDate(fixtureDate);
@@ -88,8 +86,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			if (homeGoalsHaveChanged || awayGoalsHaveChanged) {
 				throw new ChangeScoreException("You cannot update the score of a fixture that has already been played using this method");
 			}
-			
-			System.out.println("EXISTING FIXTURE: " + existingFixture.getFixtureId());
 			
 			updateMongoRecord(existingFixture.getFixtureId(), MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
 					kv(HOME_TEAM_ID, homeTeam.getTeamId()),
