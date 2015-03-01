@@ -51,9 +51,16 @@ public class FootballResultsAnalyserMongoDAOTest {
 		dao = new FootballResultsAnalyserMongoDAO();
 		domainObjectFactory = new DomainObjectFactoryImpl();
 		
+		MongoMapper mongoMapper = new MongoMapper();
+		mongoMapper.setDomainObjectFactory(domainObjectFactory);
+		mongoMapper.setDao(dao);
+		
+		MongoClient mongoClient = new MongoClient(MONGO_DB_HOST);
+		
 		((FootballResultsAnalyserMongoDAO)dao).setDbName(MONGO_TEST_DB_NAME);
 		((FootballResultsAnalyserMongoDAO)dao).setDomainObjectFactory(domainObjectFactory);
-		((FootballResultsAnalyserMongoDAO)dao).setMongoHost(MONGO_DB_HOST);
+		((FootballResultsAnalyserMongoDAO)dao).setMongoClient(mongoClient);
+		((FootballResultsAnalyserMongoDAO)dao).setMongoMapper(mongoMapper);
 		
 		dao.startSession();
 		
@@ -116,6 +123,21 @@ public class FootballResultsAnalyserMongoDAOTest {
 	}
 
 	@Test
+	public void shouldUpdateExistingSeasons() {
+		// Given
+		Season<String> season1 = dao.addSeason(SEASON1);
+
+		// When
+		Season<String> seasonUpdated = dao.addSeason(SEASON1);
+		
+		// Then
+		List<Season<String>> seasons = dao.getSeasons();
+		assertEquals (1, seasons.size());
+		
+		assertEquals (season1.getSeasonNumber(), seasonUpdated.getSeasonNumber());
+	}
+
+	@Test
 	public void shouldGetSeasons() {
 		// Given
 		Season<String> season1 = dao.addSeason(SEASON1);
@@ -164,7 +186,21 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (division2.getDivisionId(), division2.getDivisionIdAsString());
 		assertEquals (division3.getDivisionId(), division3.getDivisionIdAsString());
 	}
-	
+
+	@Test
+	public void shouldNotDuplicateDivisionWithSameName () {
+		// Given
+		Division<String> division = dao.addDivision(DIVISION1);
+		
+		// When
+		Division<String> updatedDivision = dao.addDivision(DIVISION1);
+		
+		// Then
+		Map<String, Division<String>> divisions = dao.getAllDivisions();
+		assertEquals (1, divisions.size());
+		assertEquals (division.getDivisionId(), updatedDivision.getDivisionId());
+	}
+
 	@Test
 	public void shouldAddTeam () {
 		// Given
@@ -189,6 +225,20 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (team1.getTeamId(), team1.getTeamIdAsString());
 		assertEquals (team2.getTeamId(), team2.getTeamIdAsString());
 		assertEquals (team3.getTeamId(), team3.getTeamIdAsString());
+	}
+
+	@Test
+	public void shouldNotDuplicateTeamWithSameName () {
+		// Given
+		Team<String> team = dao.addTeam(TEAM1);
+		
+		// When
+		Team<String> updatedTeam = dao.addTeam(TEAM1);
+		
+		// Then
+		Map<String, Team<String>> teams = dao.getAllTeams();
+		assertEquals (1, teams.size());
+		assertEquals (team.getTeamId(), updatedTeam.getTeamId());
 	}
 
 	@Test

@@ -1,25 +1,20 @@
 package uk.co.mindbadger.footballresultsanalyser.dao;
 
-import java.net.UnknownHostException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import static uk.co.mindbadger.footballresultsanalyser.dao.MongoEntityNames.*;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.bson.types.ObjectId;
 
 import uk.co.mindbadger.footballresultsanalyser.domain.Division;
 import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
-import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
-import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivisionTeam;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 import com.mongodb.BasicDBList;
@@ -31,79 +26,29 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
 public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserDAO<String> {
-	private static final String MONGO_SEASON = "season";
-	private static final String MONGO_TEAM = "team";
-	private static final String MONGO_DIVISION = "division";
-	private static final String MONGO_FIXTURE = "fixture";
-
-	private static final String ID = "_id";
-	private static final String DIV_ID = "div_id";
-	private static final String AWAY_GOALS = "away_goals";
-	private static final String HOME_GOALS = "home_goals";
-	private static final String DIV_NAME = "div_name";
-	private static final String FIXTURE_DATE = "fixture_date";
-	private static final String AWAY_TEAM_ID = "away_team_id";
-	private static final String HOME_TEAM_ID = "home_team_id";
-	private static final String TEAM_NAME = "team_name";
-	private static final String SSN_NUM = "ssn_num";
-
 	Logger logger = Logger.getLogger(FootballResultsAnalyserMongoDAO.class);
 
 	private DomainObjectFactory<String> domainObjectFactory;
 	private String dbName;
-	private String mongoHost;
-	
 	private DB db;
 	private MongoClient mongoClient;
-	
-	private class KV {
-		private String key;
-		private Object value;
-		public KV (String key, Object value) {
-			this.key = key;
-			this.value = value;
-		}
-		public String getKey () {
-			return key;
-		}
-		public Object getValue () {
-			return value;
-		}
-	}
-	
-	private KV kv(String key, Object value) {
-		return new KV(key, value);
-	}
-	
-	private String addMongoRecord (String collection, KV ... values) {
-		DBCollection mongoCollection = db.getCollection(collection);
-		BasicDBObject basicObject = new BasicDBObject ();
-		for (int i = 0; i < values.length; i++) {
-			basicObject.append(values[i].getKey(), values[i].getValue());
-		}
-		mongoCollection.insert(basicObject);
-		Object objectId = basicObject.get(ID);
-		return objectId.toString();
-	}
-
-	private void updateMongoRecord (String id, String collection, KV ... values) {
-		DBCollection mongoCollection = db.getCollection(collection);
-		BasicDBObject basicObject = new BasicDBObject ();
-		for (int i = 0; i < values.length; i++) {
-			basicObject.append(values[i].getKey(), values[i].getValue());
-		}
-		
-		DBObject idObject = new BasicDBObject(ID, id);
-		
-		mongoCollection.update(idObject, basicObject);
-	}
+	private MongoMapper mongoMapper;
 
 	@Override
 	public Division<String> addDivision(String divisionName) {
-		String divId = addMongoRecord(MONGO_DIVISION, kv(DIV_NAME, divisionName));
+		Division<String> division = null;
 		
-		Division<String> division = domainObjectFactory.createDivision(divisionName);
-		division.setDivisionId(divId);
+		DBCollection mongoDivisions = db.getCollection(MONGO_DIVISION);
+		DBObject query = new BasicDBObject(DIV_NAME, divisionName);
+		DBCursor divisionsCursor = mongoDivisions.find(query);
+		if(!divisionsCursor.hasNext()) {
+			String divId = addMongoRecord(MONGO_DIVISION, kv(DIV_NAME, divisionName));
+			division = domainObjectFactory.createDivision(divisionName);
+			division.setDivisionId(divId);
+		} else {
+			DBObject divisionObject = divisionsCursor.next();
+			division = mongoMapper.mapMongoToDivision(divisionObject); 
+		}
 		
 		return division;
 	}
@@ -128,6 +73,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 					kv(HOME_GOALS, homeGoals),
 					kv(AWAY_GOALS, awayGoals));
 			
+			System.out.println("NEW FIXTURE: " + fixtureId);
+			
 			fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
 			fixture.setDivision(division);
 			fixture.setFixtureDate(fixtureDate);
@@ -141,6 +88,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			if (homeGoalsHaveChanged || awayGoalsHaveChanged) {
 				throw new ChangeScoreException("You cannot update the score of a fixture that has already been played using this method");
 			}
+			
+			System.out.println("EXISTING FIXTURE: " + existingFixture.getFixtureId());
 			
 			updateMongoRecord(existingFixture.getFixtureId(), MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
 					kv(HOME_TEAM_ID, homeTeam.getTeamId()),
@@ -161,34 +110,36 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 
 	@Override
 	public Season<String> addSeason(Integer seasonNumber) {
-		addMongoRecord(MONGO_SEASON, kv(ID, seasonNumber));
-		
-		Season<String> season = domainObjectFactory.createSeason(seasonNumber);
+		Season<String> season = null;
+		Season<String> existingSeason = getSeason(seasonNumber);
+
+		if (existingSeason == null) {
+			addMongoRecord(MONGO_SEASON, kv(ID, seasonNumber));
+			season = domainObjectFactory.createSeason(seasonNumber);
+		} else {
+			season = existingSeason;
+		}
 		
 		return season;
 	}
 
 	@Override
 	public Team<String> addTeam(String teamName) {
-		String teamId = addMongoRecord(MONGO_TEAM, kv(TEAM_NAME, teamName));
+		Team<String> team = null;
 		
-		Team<String> team = domainObjectFactory.createTeam(teamName);
-		team.setTeamId(teamId);
+		DBCollection mongoTeams = db.getCollection(MONGO_TEAM);
+		DBObject query = new BasicDBObject(TEAM_NAME, teamName);
+		DBCursor teamsCursor = mongoTeams.find(query);
+		if(teamsCursor.hasNext()) {
+			DBObject teamObject = teamsCursor.next();
+			team = mongoMapper.mapMongoToTeam(teamObject);
+		} else {
+			String teamId = addMongoRecord(MONGO_TEAM, kv(TEAM_NAME, teamName));
+			team = domainObjectFactory.createTeam(teamName);
+			team.setTeamId(teamId);
+		}
 		
 		return team;
-	}
-
-	@Override
-	public void closeSession() {
-		mongoClient.close();
-	}
-
-	private Division<String> mapMongoToDivision (DBObject mongoObject) {
-		String divName = mongoObject.get(DIV_NAME).toString();
-		String divId = mongoObject.get(ID).toString();
-		Division<String> division = domainObjectFactory.createDivision(divName);
-		division.setDivisionId(divId);
-		return division;
 	}
 	
 	@Override
@@ -200,19 +151,11 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(divisionsCursor.hasNext()) {
 			DBObject divisionObject = divisionsCursor.next();
-			Division<String> division = mapMongoToDivision (divisionObject);
+			Division<String> division = mongoMapper.mapMongoToDivision (divisionObject);
 			divisions.put(division.getDivisionId(), division);
 		}
 		
 		return divisions;
-	}
-
-	private Team<String> mapMongoToTeam (DBObject mongoObject) {
-		String teamName = mongoObject.get(TEAM_NAME).toString();
-		String teamId = mongoObject.get(ID).toString();
-		Team<String> team = domainObjectFactory.createTeam(teamName);
-		team.setTeamId(teamId);
-		return team;
 	}
 	
 	@Override
@@ -224,7 +167,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(teamsCursor.hasNext()) {
 			DBObject teamObject = teamsCursor.next();
-			Team<String> newTeam = mapMongoToTeam (teamObject);
+			Team<String> newTeam = mongoMapper.mapMongoToTeam (teamObject);
 			teams.put(newTeam.getTeamId(), newTeam);
 		}
 		
@@ -260,55 +203,11 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(fixturesCursor.hasNext()) {
 			DBObject fixtureObject = fixturesCursor.next();
-			Fixture<String> fixture = mapMongoToFixture (fixtureObject);
+			Fixture<String> fixture = mongoMapper.mapMongoToFixture (fixtureObject);
 			fixtures.add(fixture);
 		}
 		
 		return fixtures;
-	}
-
-	private Fixture<String> mapMongoToFixture (DBObject mongoObject) {
-		String seasonNumber = mongoObject.get(SSN_NUM).toString();
-		String homeTeamId = mongoObject.get(HOME_TEAM_ID).toString();
-		String awayTeamId = mongoObject.get(AWAY_TEAM_ID).toString();
-		String id = mongoObject.get(ID).toString();
-		
-		Calendar fixtureDate = null;
-		String fixtureDateAsString = null;
-		if (mongoObject.get(FIXTURE_DATE) != null) {
-			fixtureDateAsString = mongoObject.get(FIXTURE_DATE).toString();
-			fixtureDate = Calendar.getInstance(); //TODO convert the string into a data
-			SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-			try {
-				fixtureDate.setTime(sdf.parse(fixtureDateAsString));
-			} catch (ParseException e) {
-				throw new RuntimeException (e);
-			}
-		}
-		
-		String divId = mongoObject.get(DIV_ID).toString();
-		Integer homeGoals = null;
-		if (mongoObject.get(HOME_GOALS) != null) {
-			homeGoals = Integer.parseInt(mongoObject.get(HOME_GOALS).toString());
-		}
-		Integer awayGoals = null;
-		if (mongoObject.get(AWAY_GOALS) != null) {
-			awayGoals = Integer.parseInt(mongoObject.get(AWAY_GOALS).toString());
-		}
-		
-		Season<String> season = getSeason(Integer.parseInt(seasonNumber));
-		Team<String> homeTeam = getTeam(homeTeamId);
-		Team<String> awayTeam = getTeam(awayTeamId);
-		Division<String> division = getDivision(divId);
-		
-		Fixture<String> fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
-		fixture.setDivision(division);
-		fixture.setFixtureDate(fixtureDate);
-		fixture.setHomeGoals(homeGoals);
-		fixture.setAwayGoals(awayGoals);
-		fixture.setFixtureId(id);
-		
-		return fixture;
 	}
 	
 	@Override
@@ -330,18 +229,12 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(fixturesCursor.hasNext()) {
 			DBObject fixtureObject = fixturesCursor.next();
-			Fixture<String> fixture = mapMongoToFixture (fixtureObject);
+			Fixture<String> fixture = mongoMapper.mapMongoToFixture (fixtureObject);
 			
 			fixtures.add(fixture);
 		}
 		
 		return fixtures;
-	}
-	
-	private Season<String> mapMongoToSeason (DBObject mongoObject) {
-		Integer seasonNumber = (Integer) mongoObject.get(ID);
-		Season<String> season = domainObjectFactory.createSeason(seasonNumber);
-		return season;
 	}
 	
 	@Override
@@ -351,7 +244,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCursor seasonsCursor = mongoSeasons.find(query);
 		if(seasonsCursor.hasNext()) {
 			DBObject seasonObject = seasonsCursor.next();
-			return mapMongoToSeason(seasonObject);
+			return mongoMapper.mapMongoToSeason(seasonObject);
 		}
 		return null;
 	}
@@ -363,7 +256,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCursor divisionsCursor = mongoDivisions.find(query);
 		if(divisionsCursor.hasNext()) {
 			DBObject divisionObject = divisionsCursor.next();
-			return mapMongoToDivision(divisionObject);
+			return mongoMapper.mapMongoToDivision(divisionObject);
 		}
 		return null;
 	}
@@ -375,7 +268,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBCursor teamsCursor = mongoTeams.find(query);
 		if(teamsCursor.hasNext()) {
 			DBObject teamObject = teamsCursor.next();
-			return mapMongoToTeam(teamObject);
+			return mongoMapper.mapMongoToTeam(teamObject);
 		}
 		return null;
 	}
@@ -389,7 +282,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(seasonsCursor.hasNext()) {
 			DBObject seasonObject = seasonsCursor.next();
-			Season<String> newSeason = mapMongoToSeason (seasonObject);
+			Season<String> newSeason = mongoMapper.mapMongoToSeason (seasonObject);
 			seasons.add(newSeason);
 		}
 		
@@ -417,7 +310,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		while(fixturesCursor.hasNext()) {
 			DBObject fixtureObject = fixturesCursor.next();
-			Fixture<String> fixture = mapMongoToFixture (fixtureObject);
+			Fixture<String> fixture = mongoMapper.mapMongoToFixture (fixtureObject);
 			fixtures.add(fixture);
 		}
 		
@@ -439,22 +332,22 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		if(fixturesCursor.hasNext()) {
 			DBObject fixtureObject = fixturesCursor.next();
-			fixture = mapMongoToFixture (fixtureObject);
+			fixture = mongoMapper.mapMongoToFixture (fixtureObject);
 		}
 		
 		return fixture;
 	}
-	
+
 	@Override
 	public void startSession() {
-		try {
-			mongoClient = new MongoClient(this.mongoHost);
-			db = mongoClient.getDB(this.dbName);
-		} catch (UnknownHostException e) {
-			throw new IllegalArgumentException(e);
-		}			
+		db = mongoClient.getDB(this.dbName);
 	}
 
+	@Override
+	public void closeSession() {
+		mongoClient.close();
+	}
+	
 	public DomainObjectFactory<String> getDomainObjectFactory() {
 		return domainObjectFactory;
 	}
@@ -470,13 +363,62 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	public void setDbName(String dbName) {
 		this.dbName = dbName;
 	}
-
-	public String getMongoHost() {
-		return mongoHost;
+	
+	public MongoClient getMongoClient() {
+		return mongoClient;
 	}
 
-	public void setMongoHost(String mongoHost) {
-		this.mongoHost = mongoHost;
+	public void setMongoClient(MongoClient mongoClient) {
+		this.mongoClient = mongoClient;
 	}
 
+	public MongoMapper getMongoMapper() {
+		return mongoMapper;
+	}
+
+	public void setMongoMapper(MongoMapper mongoMapper) {
+		this.mongoMapper = mongoMapper;
+	}
+
+	private String addMongoRecord (String collection, KV ... values) {
+		DBCollection mongoCollection = db.getCollection(collection);
+		BasicDBObject basicObject = new BasicDBObject ();
+		for (int i = 0; i < values.length; i++) {
+			basicObject.append(values[i].getKey(), values[i].getValue());
+		}
+		mongoCollection.insert(basicObject);
+		Object objectId = basicObject.get(ID);
+		return objectId.toString();
+	}
+
+	private void updateMongoRecord (String id, String collection, KV ... values) {
+		DBCollection mongoCollection = db.getCollection(collection);
+		BasicDBObject basicObject = new BasicDBObject ();
+		for (int i = 0; i < values.length; i++) {
+			basicObject.append(values[i].getKey(), values[i].getValue());
+		}
+		
+		DBObject idObject = new BasicDBObject(ID, id);
+		
+		mongoCollection.update(idObject, basicObject);
+	}
+
+	private class KV {
+		private String key;
+		private Object value;
+		public KV (String key, Object value) {
+			this.key = key;
+			this.value = value;
+		}
+		public String getKey () {
+			return key;
+		}
+		public Object getValue () {
+			return value;
+		}
+	}
+	
+	private KV kv(String key, Object value) {
+		return new KV(key, value);
+	}
 }
