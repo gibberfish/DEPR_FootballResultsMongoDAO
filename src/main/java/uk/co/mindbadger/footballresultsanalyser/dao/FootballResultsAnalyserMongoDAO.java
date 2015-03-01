@@ -85,7 +85,19 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		Object objectId = basicObject.get(ID);
 		return objectId.toString();
 	}
-	
+
+	private void updateMongoRecord (String id, String collection, KV ... values) {
+		DBCollection mongoCollection = db.getCollection(collection);
+		BasicDBObject basicObject = new BasicDBObject ();
+		for (int i = 0; i < values.length; i++) {
+			basicObject.append(values[i].getKey(), values[i].getValue());
+		}
+		
+		DBObject idObject = new BasicDBObject(ID, id);
+		
+		mongoCollection.update(idObject, basicObject);
+	}
+
 	@Override
 	public Division<String> addDivision(String divisionName) {
 		String divId = addMongoRecord(MONGO_DIVISION, kv(DIV_NAME, divisionName));
@@ -98,25 +110,51 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 
 	@Override
 	public Fixture<String> addFixture(Season<String> season, Calendar fixtureDate, Division<String> division, Team<String> homeTeam, Team<String> awayTeam, Integer homeGoals, Integer awayGoals) {
+		Fixture<String> fixture = null; 
+				
 		Date date = null;
 		if (fixtureDate != null) {
 			date = fixtureDate.getTime();
 		}
 		
-		String fixtureId = addMongoRecord(MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
-				kv(HOME_TEAM_ID, homeTeam.getTeamId()),
-				kv(AWAY_TEAM_ID, awayTeam.getTeamId()),
-				kv(FIXTURE_DATE, date),
-				kv(DIV_ID, division.getDivisionId()),
-				kv(HOME_GOALS, homeGoals),
-				kv(AWAY_GOALS, awayGoals));
+		Fixture<String> existingFixture = getFixture(season, division, homeTeam, awayTeam);
 		
-		Fixture<String> fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
-		fixture.setDivision(division);
-		fixture.setFixtureDate(fixtureDate);
-		fixture.setHomeGoals(homeGoals);
-		fixture.setAwayGoals(awayGoals);
-		fixture.setFixtureId(fixtureId);
+		if (existingFixture == null) {
+			String fixtureId = addMongoRecord(MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
+					kv(HOME_TEAM_ID, homeTeam.getTeamId()),
+					kv(AWAY_TEAM_ID, awayTeam.getTeamId()),
+					kv(FIXTURE_DATE, date),
+					kv(DIV_ID, division.getDivisionId()),
+					kv(HOME_GOALS, homeGoals),
+					kv(AWAY_GOALS, awayGoals));
+			
+			fixture = domainObjectFactory.createFixture(season, homeTeam, awayTeam);
+			fixture.setDivision(division);
+			fixture.setFixtureDate(fixtureDate);
+			fixture.setHomeGoals(homeGoals);
+			fixture.setAwayGoals(awayGoals);
+			fixture.setFixtureId(fixtureId);
+		} else {
+			boolean homeGoalsHaveChanged = (existingFixture.getHomeGoals() != null && homeGoals != null && existingFixture.getHomeGoals() != homeGoals);
+			boolean awayGoalsHaveChanged = (existingFixture.getAwayGoals() != null && awayGoals != null && existingFixture.getAwayGoals() != awayGoals);
+			
+			if (homeGoalsHaveChanged || awayGoalsHaveChanged) {
+				throw new ChangeScoreException("You cannot update the score of a fixture that has already been played using this method");
+			}
+			
+			updateMongoRecord(existingFixture.getFixtureId(), MONGO_FIXTURE, kv(SSN_NUM, season.getSeasonNumber()),
+					kv(HOME_TEAM_ID, homeTeam.getTeamId()),
+					kv(AWAY_TEAM_ID, awayTeam.getTeamId()),
+					kv(FIXTURE_DATE, date),
+					kv(DIV_ID, division.getDivisionId()),
+					kv(HOME_GOALS, homeGoals),
+					kv(AWAY_GOALS, awayGoals));
+	
+			fixture = existingFixture;
+			fixture.setFixtureDate(fixtureDate);
+			fixture.setHomeGoals(homeGoals);
+			fixture.setAwayGoals(awayGoals);
+		}
 
 		return fixture;
 	}
@@ -299,7 +337,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		return fixtures;
 	}
-
+	
 	private Season<String> mapMongoToSeason (DBObject mongoObject) {
 		Integer seasonNumber = (Integer) mongoObject.get(ID);
 		Season<String> season = domainObjectFactory.createSeason(seasonNumber);
@@ -386,6 +424,27 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return fixtures;
 	}
 
+	@Override
+	public Fixture<String> getFixture(Season<String> season, Division<String> division, Team<String> homeTeam, Team<String> awayTeam) {
+		Fixture<String> fixture = null;
+		
+		DBCollection mongoFixures = db.getCollection(MONGO_FIXTURE);
+		
+		DBObject query = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
+			.append(DIV_ID, division.getDivisionId())
+			.append(HOME_TEAM_ID, homeTeam.getTeamId())
+			.append(AWAY_TEAM_ID, awayTeam.getTeamId());
+		
+		DBCursor fixturesCursor = mongoFixures.find(query);
+		
+		if(fixturesCursor.hasNext()) {
+			DBObject fixtureObject = fixturesCursor.next();
+			fixture = mapMongoToFixture (fixtureObject);
+		}
+		
+		return fixture;
+	}
+	
 	@Override
 	public void startSession() {
 		try {

@@ -282,4 +282,80 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals(fixture4.getFixtureId(), fixturesWithNoDate.get(0).getFixtureId());
 		assertEquals(fixture6.getFixtureId(), fixturesWithNoDate.get(1).getFixtureId());	
 	}
+	
+	@Test
+	public void shouldUpdateExistingFixtureIfOneExists () {
+		// Given
+		Season<String> season1 = dao.addSeason(SEASON1);
+		Calendar fixtureDate1 = Calendar.getInstance(); fixtureDate1.set(Calendar.DAY_OF_MONTH, 4);
+		Division<String> division1 = dao.addDivision(DIVISION1);
+		Team<String> team1 = dao.addTeam(TEAM1);
+		Team<String> team2 = dao.addTeam(TEAM2);
+		
+		// When (I add the initial fixture)
+		Fixture<String> existingfixture = dao.addFixture(season1, null, division1, team1, team2, null, null);
+		
+		// Then
+		List<Fixture<String>> fixturesForSsn1Div1Tm1 = dao.getFixturesForTeamInDivisionInSeason(season1, division1, team1);
+		assertEquals (1, fixturesForSsn1Div1Tm1.size());
+		
+		// When (I update the date)
+		Fixture<String> fixtureWithUpdatedDate = dao.addFixture(season1, fixtureDate1, division1, team1, team2, null, null);
+		
+		// Then
+		assertEquals (existingfixture.getFixtureId(), fixtureWithUpdatedDate.getFixtureId());
+		fixturesForSsn1Div1Tm1 = dao.getFixturesForTeamInDivisionInSeason(season1, division1, team1);
+		assertEquals (1, fixturesForSsn1Div1Tm1.size());
+		assertEquals (fixtureDate1, fixtureWithUpdatedDate.getFixtureDate());
+		
+		// When (I update the score)
+		Fixture<String> fixtureWithUpdatedScore = dao.addFixture(season1, fixtureDate1, division1, team1, team2, 2, 1);
+		
+		// Then
+		assertTrue (existingfixture.getFixtureId().equals(fixtureWithUpdatedScore.getFixtureId()));
+		fixturesForSsn1Div1Tm1 = dao.getFixturesForTeamInDivisionInSeason(season1, division1, team1);
+		assertEquals (1, fixturesForSsn1Div1Tm1.size());
+		assertEquals (new Integer(2), fixtureWithUpdatedScore.getHomeGoals());
+		assertEquals (new Integer(1), fixtureWithUpdatedScore.getAwayGoals());
+	}
+
+	@Test
+	public void shouldThrowAnExceptionIfWeAttemptToUpdateTheScoreIfOneExists () {
+		// Given
+		Season<String> season1 = dao.addSeason(SEASON1);
+		Calendar fixtureDate1 = Calendar.getInstance(); fixtureDate1.set(Calendar.DAY_OF_MONTH, 4);
+		Division<String> division1 = dao.addDivision(DIVISION1);
+		Team<String> team1 = dao.addTeam(TEAM1);
+		Team<String> team2 = dao.addTeam(TEAM2);
+		Fixture<String> existingfixture = dao.addFixture(season1, fixtureDate1, division1, team1, team2, 2, 1);
+		
+		// When (I update the score)
+		try {
+			Fixture<String> fixtureWithUpdatedScore = dao.addFixture(season1, fixtureDate1, division1, team1, team2, 3, 0);
+			fail ("Should not be able to update the score of a fixture that already has a score");
+		} catch (ChangeScoreException e) {
+			// Then
+			assertEquals ("You cannot update the score of a fixture that has already been played using this method", e.getMessage());
+		}
+	}
+
+	@Test
+	public void shouldBeAbleToFindAnExistingFixture () {
+		// Given
+		Season<String> season1 = dao.addSeason(SEASON1);
+		Division<String> division1 = dao.addDivision(DIVISION1);
+		Team<String> team1 = dao.addTeam(TEAM1);
+		Team<String> team2 = dao.addTeam(TEAM2);
+		
+		// When (I add the initial fixture)
+		Fixture<String> existingfixture = dao.addFixture(season1, null, division1, team1, team2, null, null);
+		
+		// Then
+		Fixture<String> fixtureIsFound = dao.getFixture(season1, division1, team1, team2);
+		Fixture<String> fixtureIsNotFound = dao.getFixture(season1, division1, team2, team1);
+		
+		assertEquals (existingfixture.getFixtureId(), fixtureIsFound.getFixtureId());
+		assertNull (fixtureIsNotFound);
+	}
+
 }
