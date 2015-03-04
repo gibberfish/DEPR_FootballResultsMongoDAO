@@ -23,6 +23,7 @@ import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
 import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactoryImpl;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 public class FootballResultsAnalyserMongoDAOTest {
@@ -43,8 +44,8 @@ public class FootballResultsAnalyserMongoDAOTest {
 	private static final String TEAM_COLLECTION = "team";
 	private static final String FIXTURE_COLLECTION = "fixture";
 	
-	public FootballResultsAnalyserDAO<String> dao;
-	private DomainObjectFactory<String> domainObjectFactory;
+	public FootballResultsAnalyserDAO<String, String, String> dao;
+	private DomainObjectFactory<String, String, String> domainObjectFactory;
 
 	@Before
 	public void setup() throws UnknownHostException {
@@ -406,6 +407,39 @@ public class FootballResultsAnalyserMongoDAOTest {
 		
 		assertEquals (existingfixture.getFixtureId(), fixtureIsFound.getFixtureId());
 		assertNull (fixtureIsNotFound);
+	}
+	
+	@Test
+	public void shouldBeAbleToAddANewSeasonDivision () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+
+		// When
+		SeasonDivision<String, String> seasonDivision = dao.addSeasonDivision(season, division, 1);
+		 
+		// Then
+		assertEquals (season.getSeasonNumber(), seasonDivision.getSeason().getSeasonNumber());
+		assertEquals (division.getDivisionId(), seasonDivision.getDivision().getDivisionId());
+		assertEquals (1, seasonDivision.getDivisionPosition());
+		assertNotNull (seasonDivision.getId());
+	}
+
+	@Test
+	public void shouldUpdateASeasonDivisionIfItAlreadyExists () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		SeasonDivision<String, String> seasonDivision = dao.addSeasonDivision(season, division, 1);
+		
+		// When
+		SeasonDivision<String, String> updatedSeasonDivision = dao.addSeasonDivision(season, division, 2);
+		
+		// Then
+		assertEquals (season.getSeasonNumber(), seasonDivision.getSeason().getSeasonNumber());
+		assertEquals (division.getDivisionId(), seasonDivision.getDivision().getDivisionId());
+		assertEquals (2, updatedSeasonDivision.getDivisionPosition());
+		assertEquals (seasonDivision.getId(), updatedSeasonDivision.getId());
 	}
 
 }

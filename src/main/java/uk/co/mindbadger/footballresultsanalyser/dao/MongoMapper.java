@@ -10,13 +10,14 @@ import uk.co.mindbadger.footballresultsanalyser.domain.Division;
 import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 import static uk.co.mindbadger.footballresultsanalyser.dao.MongoEntityNames.*;
 
 public class MongoMapper {
-	private DomainObjectFactory<String> domainObjectFactory;
-	private FootballResultsAnalyserDAO<String> dao;
+	private DomainObjectFactory<String, String, String> domainObjectFactory;
+	private FootballResultsAnalyserDAO<String, String, String> dao;
 
 	public Season<String> mapMongoToSeason (DBObject mongoObject) {
 		Integer seasonNumber = (Integer) mongoObject.get(ID);
@@ -30,6 +31,24 @@ public class MongoMapper {
 		Division<String> division = domainObjectFactory.createDivision(divName);
 		division.setDivisionId(divId);
 		return division;
+	}
+
+	public SeasonDivision<String, String> mapMongoToSeasonDivision (DBObject mongoObject) {
+		String seasonNumber = mongoObject.get(SSN_NUM).toString();
+		String divId = mongoObject.get(DIV_ID).toString();
+		String id = mongoObject.get(ID).toString();
+		Object posObject = mongoObject.get(POSITION);
+		int pos = 0;
+		if (posObject != null) {
+			pos = Integer.parseInt(posObject.toString());
+		}
+		
+		Season<String> season = dao.getSeason(Integer.parseInt(seasonNumber));
+		Division<String> division = dao.getDivision(divId);
+		
+		SeasonDivision<String, String> seasonDivision = domainObjectFactory.createSeasonDivision(season, division, pos);
+		seasonDivision.setId(id);
+		return seasonDivision;
 	}
 
 	public Team<String> mapMongoToTeam (DBObject mongoObject) {
@@ -84,19 +103,19 @@ public class MongoMapper {
 		return fixture;
 	}
 	
-	public DomainObjectFactory<String> getDomainObjectFactory() {
+	public DomainObjectFactory<String, String, String> getDomainObjectFactory() {
 		return domainObjectFactory;
 	}
 
-	public void setDomainObjectFactory(DomainObjectFactory<String> domainObjectFactory) {
+	public void setDomainObjectFactory(DomainObjectFactory<String, String, String> domainObjectFactory) {
 		this.domainObjectFactory = domainObjectFactory;
 	}
 
-	public FootballResultsAnalyserDAO<String> getDao() {
+	public FootballResultsAnalyserDAO<String, String, String> getDao() {
 		return dao;
 	}
 
-	public void setDao(FootballResultsAnalyserDAO<String> dao) {
+	public void setDao(FootballResultsAnalyserDAO<String, String, String> dao) {
 		this.dao = dao;
 	}
 

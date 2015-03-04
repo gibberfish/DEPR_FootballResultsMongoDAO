@@ -1,13 +1,12 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
-import java.util.Set;
-
-public class SeasonDivisionImpl implements SeasonDivision<String> {
+public class SeasonDivisionImpl implements SeasonDivision<String, String> {
 	private static final long serialVersionUID = -1409106637881070795L;
 	
 	private Division<String> division;
 	private int divisionPosition;
 	private Season<String> season;
+	private String id;
 
 	@Override
 	public Division<String> getDivision() {
@@ -38,25 +37,15 @@ public class SeasonDivisionImpl implements SeasonDivision<String> {
 	public void setSeason(Season<String> season) {
 		this.season = season;
 	}
-
+	
 	@Override
-	public void setTeamsInSeasonDivision(Set<SeasonDivisionTeam<String>> arg0) {
-		throw new RuntimeException ("Unimplemented method");
+	public void setId(String id) {
+		this.id = id;
 	}
 	
 	@Override
-	public void setPrimaryKey(SeasonDivisionId<String> arg0) {
-		throw new RuntimeException ("Unimplemented method");
-	}
-	
-	@Override
-	public SeasonDivisionId<String> getPrimaryKey() {
-		throw new RuntimeException ("Unimplemented method");
-	}
-
-	@Override
-	public Set<SeasonDivisionTeam<String>> getTeamsInSeasonDivision() {
-		throw new RuntimeException ("Unimplemented method");
+	public String getId() {
+		return this.id;
 	}
 }
 

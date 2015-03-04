@@ -5,6 +5,8 @@ public class MongoEntityNames {
 	public static final String MONGO_TEAM = "team";
 	public static final String MONGO_DIVISION = "division";
 	public static final String MONGO_FIXTURE = "fixture";
+	public static final String MONGO_SEASON_DIVISION = "seasonDivision";
+	public static final String MONGO_SEASON_DIVISION_TEAM = "seasonDivisionTeam";
 
 	public static final String ID = "_id";
 	public static final String DIV_ID = "div_id";
@@ -14,6 +16,8 @@ public class MongoEntityNames {
 	public static final String FIXTURE_DATE = "fixture_date";
 	public static final String AWAY_TEAM_ID = "away_team_id";
 	public static final String HOME_TEAM_ID = "home_team_id";
+	public static final String TEAM_ID = "team_id";
 	public static final String TEAM_NAME = "team_name";
 	public static final String SSN_NUM = "ssn_num";
+	public static final String POSITION = "position";
 }

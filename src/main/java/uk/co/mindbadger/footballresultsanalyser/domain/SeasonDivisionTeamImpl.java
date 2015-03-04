@@ -1,10 +1,11 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
-public class SeasonDivisionTeamImpl implements SeasonDivisionTeam<String> {
+public class SeasonDivisionTeamImpl implements SeasonDivisionTeam<String, String, String> {
 	private static final long serialVersionUID = 2624036331631829410L;
 	
 	private Team<String> team;
-	private SeasonDivision<String> seasonDivision;
+	private SeasonDivision<String, String> seasonDivision;
+	private String id;
 
 	@Override
 	public Team<String> getTeam() {
@@ -17,23 +18,23 @@ public class SeasonDivisionTeamImpl implements SeasonDivisionTeam<String> {
 	}
 	
 	@Override
-	public SeasonDivision<String> getSeasonDivision() {
+	public SeasonDivision<String, String> getSeasonDivision() {
 		return seasonDivision;
 	}
 	
 	@Override
-	public void setSeasonDivision(SeasonDivision<String> seasonDivision) {
+	public void setSeasonDivision(SeasonDivision<String, String> seasonDivision) {
 		this.seasonDivision = seasonDivision;
 	}
 
 	@Override
-	public void setPrimaryKey(SeasonDivisionTeamId<String> arg0) {
-		throw new RuntimeException ("Unimplemented method");
+	public void setId(String id) {
+		this.id = id;
 	}
 	
 	@Override
-	public SeasonDivisionTeamId<String> getPrimaryKey() {
-		throw new RuntimeException ("Unimplemented method");
+	public String getId() {
+		return this.id;
 	}
 }
 

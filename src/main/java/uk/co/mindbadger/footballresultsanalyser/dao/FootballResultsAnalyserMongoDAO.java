@@ -15,6 +15,8 @@ import uk.co.mindbadger.footballresultsanalyser.domain.Division;
 import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivisionTeam;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 import com.mongodb.BasicDBList;
@@ -25,10 +27,10 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 
-public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserDAO<String> {
+public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserDAO<String, String, String> {
 	Logger logger = Logger.getLogger(FootballResultsAnalyserMongoDAO.class);
 
-	private DomainObjectFactory<String> domainObjectFactory;
+	private DomainObjectFactory<String, String, String> domainObjectFactory;
 	private String dbName;
 	private DB db;
 	private MongoClient mongoClient;
@@ -335,6 +337,45 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	}
 
 	@Override
+	public SeasonDivision<String, String> addSeasonDivision(Season<String> season, Division<String> division, int position) {
+		SeasonDivision<String, String> seasonDivision = null;
+		
+		DBCollection mongoSeasonDivisions = db.getCollection(MONGO_SEASON_DIVISION);
+		
+		DBObject query = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
+			.append(DIV_ID, division.getDivisionIdAsString());
+		
+		DBCursor seasonDivisionsCursor = mongoSeasonDivisions.find(query);
+
+		if(!seasonDivisionsCursor.hasNext()) {
+			String seasonDivisionId = addMongoRecord(MONGO_SEASON_DIVISION, kv(SSN_NUM, season.getSeasonNumber()),
+					kv(DIV_ID, division.getDivisionId()),
+					kv(POSITION, position));
+			
+			seasonDivision = domainObjectFactory.createSeasonDivision(season, division, position);
+			
+			seasonDivision.setId(seasonDivisionId);
+		} else {
+			DBObject seasonDivisionObject = seasonDivisionsCursor.next();
+			seasonDivision = mongoMapper.mapMongoToSeasonDivision(seasonDivisionObject);
+			
+			updateMongoRecord(seasonDivision.getId(), MONGO_SEASON_DIVISION, kv(SSN_NUM, season.getSeasonNumber()),
+					kv(DIV_ID, division.getDivisionId()),
+					kv(POSITION, position));
+
+			seasonDivision.setDivisionPosition(position);
+		}
+		
+		return seasonDivision;
+	}
+
+	@Override
+	public SeasonDivisionTeam<String, String, String> addSeasonDivisionTeam(
+			Season<String> arg0, Division<String> arg1, Team<String> arg2) {
+		return null;
+	}
+
+	@Override
 	public void startSession() {
 		db = mongoClient.getDB(this.dbName);
 	}
@@ -344,11 +385,11 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		mongoClient.close();
 	}
 	
-	public DomainObjectFactory<String> getDomainObjectFactory() {
+	public DomainObjectFactory<String, String, String> getDomainObjectFactory() {
 		return domainObjectFactory;
 	}
 
-	public void setDomainObjectFactory(DomainObjectFactory<String> domainObjectFactory) {
+	public void setDomainObjectFactory(DomainObjectFactory<String, String, String> domainObjectFactory) {
 		this.domainObjectFactory = domainObjectFactory;
 	}
 

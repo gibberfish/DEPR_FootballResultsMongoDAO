@@ -1,6 +1,6 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
-public class DomainObjectFactoryImpl implements DomainObjectFactory<String> {
+public class DomainObjectFactoryImpl implements DomainObjectFactory<String, String, String> {
 	
 	@Override
 	public Season<String> createSeason(Integer seasonNum) {
@@ -33,19 +33,22 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory<String> {
 	}
 
 	@Override
-	public SeasonDivision<String> createSeasonDivision(Season<String> season, Division<String> division) {
+	public SeasonDivision<String, String> createSeasonDivision(Season<String> season, Division<String> division, int position) {
+		SeasonDivision<String, String> seasonDivision = new SeasonDivisionImpl();
+		seasonDivision.setSeason(season);
+		seasonDivision.setDivision(division);
+		seasonDivision.setDivisionPosition(position);
+		return seasonDivision;
+	}
+
+	@Override
+	public SeasonDivisionTeam<String, String, String> createSeasonDivisionTeam(SeasonDivision<String, String> seasonDivision, Team<String> team) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public SeasonDivisionTeam<String> createSeasonDivisionTeam(SeasonDivision<String> seasonDivision, Team<String> team) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public SeasonDivisionId<String> createSeasonDivisionId(Season<String> season, Division<String> division) {
+	public String createSeasonDivisionId(Season<String> season, Division<String> division) {
 		throw new RuntimeException("Unimplemented method");
 //		SeasonDivisionId seasonDivisionId = new SeasonDivisionIdImpl();
 //		seasonDivisionId.setSeason(season);
@@ -54,7 +57,7 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory<String> {
 	}
 
 	@Override
-	public SeasonDivisionTeamId<String> createSeasonDivisionTeamId(SeasonDivision<String> seasonDivision, Team<String> team) {
+	public String createSeasonDivisionTeamId(SeasonDivision<String, String> seasonDivision, Team<String> team) {
 		throw new RuntimeException("Unimplemented method");
 //		SeasonDivisionTeamId seasonDivisionTeamId = new SeasonDivisionTeamIdImpl();
 //		seasonDivisionTeamId.setSeasonDivision(seasonDivision);
