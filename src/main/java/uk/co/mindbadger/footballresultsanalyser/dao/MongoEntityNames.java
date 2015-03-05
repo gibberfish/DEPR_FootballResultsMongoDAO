@@ -17,6 +17,7 @@ public class MongoEntityNames {
 	public static final String AWAY_TEAM_ID = "away_team_id";
 	public static final String HOME_TEAM_ID = "home_team_id";
 	public static final String TEAM_ID = "team_id";
+	public static final String SSN_DIV_ID = "ssn_div_id";
 	public static final String TEAM_NAME = "team_name";
 	public static final String SSN_NUM = "ssn_num";
 	public static final String POSITION = "position";

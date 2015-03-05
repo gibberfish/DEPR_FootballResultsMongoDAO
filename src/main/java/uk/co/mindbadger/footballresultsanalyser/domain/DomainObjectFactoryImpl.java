@@ -43,8 +43,10 @@ public class DomainObjectFactoryImpl implements DomainObjectFactory<String, Stri
 
 	@Override
 	public SeasonDivisionTeam<String, String, String> createSeasonDivisionTeam(SeasonDivision<String, String> seasonDivision, Team<String> team) {
-		// TODO Auto-generated method stub
-		return null;
+		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = new SeasonDivisionTeamImpl();
+		seasonDivisionTeam.setSeasonDivision(seasonDivision);
+		seasonDivisionTeam.setTeam(team);
+		return seasonDivisionTeam;
 	}
 
 	@Override

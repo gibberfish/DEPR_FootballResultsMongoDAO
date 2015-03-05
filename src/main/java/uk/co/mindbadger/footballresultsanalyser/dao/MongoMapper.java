@@ -11,6 +11,7 @@ import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
 import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivisionTeam;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 import static uk.co.mindbadger.footballresultsanalyser.dao.MongoEntityNames.*;
@@ -49,6 +50,19 @@ public class MongoMapper {
 		SeasonDivision<String, String> seasonDivision = domainObjectFactory.createSeasonDivision(season, division, pos);
 		seasonDivision.setId(id);
 		return seasonDivision;
+	}
+
+	public SeasonDivisionTeam<String, String, String> mapMongoToSeasonDivisionTeam (DBObject mongoObject) {
+		String seasonDivisionId = mongoObject.get(SSN_DIV_ID).toString();
+		String teamId = mongoObject.get(TEAM_ID).toString();
+		String id = mongoObject.get(ID).toString();
+		
+		SeasonDivision<String, String> seasonDivision = dao.getSeasonDivision(seasonDivisionId);
+		Team<String> team = dao.getTeam(teamId);
+		
+		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = domainObjectFactory.createSeasonDivisionTeam(seasonDivision, team);
+		seasonDivisionTeam.setId(id);
+		return seasonDivisionTeam;
 	}
 
 	public Team<String> mapMongoToTeam (DBObject mongoObject) {

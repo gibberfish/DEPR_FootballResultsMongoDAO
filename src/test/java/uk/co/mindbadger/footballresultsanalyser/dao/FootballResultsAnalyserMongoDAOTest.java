@@ -24,6 +24,7 @@ import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactoryImpl;
 import uk.co.mindbadger.footballresultsanalyser.domain.Fixture;
 import uk.co.mindbadger.footballresultsanalyser.domain.Season;
 import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivision;
+import uk.co.mindbadger.footballresultsanalyser.domain.SeasonDivisionTeam;
 import uk.co.mindbadger.footballresultsanalyser.domain.Team;
 
 public class FootballResultsAnalyserMongoDAOTest {
@@ -426,6 +427,23 @@ public class FootballResultsAnalyserMongoDAOTest {
 	}
 
 	@Test
+	public void shouldBeAbleToGetAnExistingSeasonDivision () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		SeasonDivision<String, String> seasonDivision = dao.addSeasonDivision(season, division, 1);
+
+		// When
+		SeasonDivision<String, String> retrievedSeasonDivision = dao.getSeasonDivision(season, division);
+		 
+		// Then
+		assertEquals (season.getSeasonNumber(), retrievedSeasonDivision.getSeason().getSeasonNumber());
+		assertEquals (division.getDivisionId(), retrievedSeasonDivision.getDivision().getDivisionId());
+		assertEquals (1, retrievedSeasonDivision.getDivisionPosition());
+		assertEquals (seasonDivision.getId(), retrievedSeasonDivision.getId());
+	}
+
+	@Test
 	public void shouldUpdateASeasonDivisionIfItAlreadyExists () {
 		// Given
 		Season<String> season = dao.addSeason(SEASON1);
@@ -440,6 +458,44 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (division.getDivisionId(), seasonDivision.getDivision().getDivisionId());
 		assertEquals (2, updatedSeasonDivision.getDivisionPosition());
 		assertEquals (seasonDivision.getId(), updatedSeasonDivision.getId());
+	}
+
+	@Test
+	public void shouldBeAbleToAddNewSeasonDivisionTeam () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		Team<String> team = dao.addTeam(TEAM1);
+		SeasonDivision<String, String> seasonDivision = dao.addSeasonDivision(season, division, 1);
+
+		// When
+		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = dao.addSeasonDivisionTeam(seasonDivision, team);
+		
+		// Then
+		assertEquals (season.getSeasonNumber(), seasonDivisionTeam.getSeasonDivision().getSeason().getSeasonNumber());
+		assertEquals (division.getDivisionId(), seasonDivisionTeam.getSeasonDivision().getDivision().getDivisionId());
+		assertEquals (team.getTeamId(), seasonDivisionTeam.getTeam().getTeamId());
+		assertNotNull (seasonDivisionTeam.getId());
+	}
+	
+	@Test
+	public void shouldUpdateASeasonDivisionTeamIfItAlreadyExists () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		Team<String> team = dao.addTeam(TEAM1);
+		SeasonDivision<String, String> seasonDivision = dao.addSeasonDivision(season, division, 1);
+		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = dao.addSeasonDivisionTeam(seasonDivision, team);
+
+		// When
+		SeasonDivisionTeam<String, String, String> updatedSeasonDivisionTeam = dao.addSeasonDivisionTeam(seasonDivision, team);
+
+		
+		// Then
+		assertEquals (season.getSeasonNumber(), seasonDivisionTeam.getSeasonDivision().getSeason().getSeasonNumber());
+		assertEquals (division.getDivisionId(), seasonDivisionTeam.getSeasonDivision().getDivision().getDivisionId());
+		assertEquals (team.getTeamId(), seasonDivisionTeam.getTeam().getTeamId());
+		assertEquals (seasonDivisionTeam.getId(), updatedSeasonDivisionTeam.getId());
 	}
 
 }

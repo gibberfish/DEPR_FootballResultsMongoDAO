@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.bson.types.ObjectId;
 
 import uk.co.mindbadger.footballresultsanalyser.domain.Division;
 import uk.co.mindbadger.footballresultsanalyser.domain.DomainObjectFactory;
@@ -250,7 +251,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	@Override
 	public Division<String> getDivision(String divId) {
 		DBCollection mongoDivisions = db.getCollection(MONGO_DIVISION);
-		DBObject query = new BasicDBObject(ID, divId);
+		ObjectId id= new ObjectId(divId);  
+		DBObject query = new BasicDBObject(ID, id);
 		DBCursor divisionsCursor = mongoDivisions.find(query);
 		if(divisionsCursor.hasNext()) {
 			DBObject divisionObject = divisionsCursor.next();
@@ -337,6 +339,34 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	}
 
 	@Override
+	public SeasonDivision<String, String> getSeasonDivision(Season<String> season, Division<String> division) {
+		DBCollection mongoSeasonDivisions = db.getCollection(MONGO_SEASON_DIVISION);
+		DBObject query = new BasicDBObject(SSN_NUM, season.getSeasonNumber())
+			.append(DIV_ID, division.getDivisionId());
+		
+		DBCursor seasonDivisionsCursor = mongoSeasonDivisions.find(query);
+		if(seasonDivisionsCursor.hasNext()) {
+			DBObject seasonDivisionObject = seasonDivisionsCursor.next();
+			return mongoMapper.mapMongoToSeasonDivision(seasonDivisionObject);
+		}
+		return null;
+	}
+
+	@Override
+	public SeasonDivision<String, String> getSeasonDivision(String seasonDivisionId) {
+		DBCollection mongoSeasonDivisions = db.getCollection(MONGO_SEASON_DIVISION);
+		ObjectId id= new ObjectId(seasonDivisionId);
+		DBObject query = new BasicDBObject(SSN_DIV_ID, id);
+		
+		DBCursor seasonDivisionsCursor = mongoSeasonDivisions.find(query);
+		if(seasonDivisionsCursor.hasNext()) {
+			DBObject seasonDivisionObject = seasonDivisionsCursor.next();
+			return mongoMapper.mapMongoToSeasonDivision(seasonDivisionObject);
+		}
+		return null;
+	}
+
+	@Override
 	public SeasonDivision<String, String> addSeasonDivision(Season<String> season, Division<String> division, int position) {
 		SeasonDivision<String, String> seasonDivision = null;
 		
@@ -370,9 +400,29 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	}
 
 	@Override
-	public SeasonDivisionTeam<String, String, String> addSeasonDivisionTeam(
-			Season<String> arg0, Division<String> arg1, Team<String> arg2) {
-		return null;
+	public SeasonDivisionTeam<String, String, String> addSeasonDivisionTeam(SeasonDivision<String, String> seasonDivision, Team<String> team) {
+		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = null;
+		
+		DBCollection mongoSeasonDivisionTeams = db.getCollection(MONGO_SEASON_DIVISION_TEAM);
+		
+		DBObject query = new BasicDBObject(SSN_DIV_ID, seasonDivision.getId())
+			.append(TEAM_ID, team.getTeamId());
+		
+		DBCursor seasonDivisionTeamsCursor = mongoSeasonDivisionTeams.find(query);
+
+		if(!seasonDivisionTeamsCursor.hasNext()) {
+			String seasonDivisionTeamId = addMongoRecord(MONGO_SEASON_DIVISION_TEAM, kv(SSN_DIV_ID, seasonDivision.getId()),
+					kv(TEAM_ID, team.getTeamId()));
+			
+			seasonDivisionTeam = domainObjectFactory.createSeasonDivisionTeam(seasonDivision, team);
+			
+			seasonDivisionTeam.setId(seasonDivisionTeamId);
+		} else {
+			DBObject seasonDivisionTeamObject = seasonDivisionTeamsCursor.next();
+			seasonDivisionTeam = mongoMapper.mapMongoToSeasonDivisionTeam(seasonDivisionTeamObject);
+		}
+		
+		return seasonDivisionTeam;
 	}
 
 	@Override
