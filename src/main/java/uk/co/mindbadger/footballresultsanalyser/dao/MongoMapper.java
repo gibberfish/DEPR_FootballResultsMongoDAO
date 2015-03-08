@@ -62,6 +62,8 @@ public class MongoMapper {
 		
 		SeasonDivisionTeam<String, String, String> seasonDivisionTeam = domainObjectFactory.createSeasonDivisionTeam(seasonDivision, team);
 		seasonDivisionTeam.setId(id);
+		seasonDivisionTeam.setTeam(team);
+		
 		return seasonDivisionTeam;
 	}
 

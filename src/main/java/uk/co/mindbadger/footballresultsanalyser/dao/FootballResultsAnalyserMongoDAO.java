@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.bson.types.ObjectId;
@@ -264,7 +266,8 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	@Override
 	public Team<String> getTeam(String teamId) {
 		DBCollection mongoTeams = db.getCollection(MONGO_TEAM);
-		DBObject query = new BasicDBObject(ID, teamId);
+		ObjectId id= new ObjectId(teamId);
+		DBObject query = new BasicDBObject(ID, id);
 		DBCursor teamsCursor = mongoTeams.find(query);
 		if(teamsCursor.hasNext()) {
 			DBObject teamObject = teamsCursor.next();
@@ -279,6 +282,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		
 		DBCollection mongoSeasons = db.getCollection(MONGO_SEASON);		
 		DBCursor seasonsCursor = mongoSeasons.find();
+		seasonsCursor.sort(new BasicDBObject(ID,-1));
 		
 		while(seasonsCursor.hasNext()) {
 			DBObject seasonObject = seasonsCursor.next();
@@ -423,6 +427,62 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		}
 		
 		return seasonDivisionTeam;
+	}
+	
+	@Override
+	public Set<SeasonDivision<String, String>> getDivisionsForSeason(Season<String> season) {
+		Set<SeasonDivision<String, String>> seasonDivisions = new HashSet<SeasonDivision<String, String>> ();
+		
+		DBCollection mongoSeasonDivisions = db.getCollection(MONGO_SEASON_DIVISION);
+		
+		DBObject query = new BasicDBObject(SSN_NUM, season.getSeasonNumber());
+				
+		DBCursor seasonDivisonsCursor = mongoSeasonDivisions.find(query);
+		
+		while(seasonDivisonsCursor.hasNext()) {
+			DBObject seasonDivisionObject = seasonDivisonsCursor.next();
+			SeasonDivision<String, String> seasonDivision = mongoMapper.mapMongoToSeasonDivision (seasonDivisionObject);
+			seasonDivisions.add(seasonDivision);
+		}
+		
+		return seasonDivisions;
+	}
+	
+	@Override
+	public Set<SeasonDivisionTeam<String, String, String>> getTeamsForDivisionInSeason(SeasonDivision<String, String> seasonDivision) {
+		Set<SeasonDivisionTeam<String, String, String>> seasonDivisionTeams = new HashSet<SeasonDivisionTeam<String, String, String>> ();
+		
+		DBCollection mongoSeasonDivisionTeams = db.getCollection(MONGO_SEASON_DIVISION_TEAM);
+		
+		DBObject query = new BasicDBObject(SSN_DIV_ID, seasonDivision.getId());
+				
+		DBCursor seasonDivisonTeamsCursor = mongoSeasonDivisionTeams.find(query);
+		
+		while(seasonDivisonTeamsCursor.hasNext()) {
+			DBObject seasonDivisionTeamObject = seasonDivisonTeamsCursor.next();
+			SeasonDivisionTeam<String, String, String> seasonDivisionTeam = mongoMapper.mapMongoToSeasonDivisionTeam (seasonDivisionTeamObject);
+			seasonDivisionTeams.add(seasonDivisionTeam);
+		}
+		
+		return seasonDivisionTeams;
+	}
+	
+	@Override
+	public List<Fixture<String>> getFixtures() {
+		List<Fixture<String>> fixtures = new ArrayList<Fixture<String>> ();
+		
+		DBCollection mongoFixures = db.getCollection(MONGO_FIXTURE);
+		
+		DBCursor fixturesCursor = mongoFixures.find();
+		
+		while(fixturesCursor.hasNext()) {
+			DBObject fixtureObject = fixturesCursor.next();
+			Fixture<String> fixture = mongoMapper.mapMongoToFixture (fixtureObject);
+			
+			fixtures.add(fixture);
+		}
+		
+		return fixtures;
 	}
 
 	@Override

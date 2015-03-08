@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -44,6 +45,8 @@ public class FootballResultsAnalyserMongoDAOTest {
 	private static final String DIVISION_COLLECTION = "division";
 	private static final String TEAM_COLLECTION = "team";
 	private static final String FIXTURE_COLLECTION = "fixture";
+	private static final String SEASON_DIVISION_COLLECTION = "seasonDivision";
+	private static final String SEASON_DIVISION_TEAM_COLLECTION = "seasonDivisionTeam";
 	
 	public FootballResultsAnalyserDAO<String, String, String> dao;
 	private DomainObjectFactory<String, String, String> domainObjectFactory;
@@ -80,6 +83,12 @@ public class FootballResultsAnalyserMongoDAOTest {
 
 		DBCollection fixtures = mongoDb.getCollection(FIXTURE_COLLECTION);
 		fixtures.drop();
+		
+		DBCollection seasonDivisions = mongoDb.getCollection(SEASON_DIVISION_COLLECTION);
+		seasonDivisions.drop();
+
+		DBCollection seasonDivisionTeams = mongoDb.getCollection(SEASON_DIVISION_TEAM_COLLECTION);
+		seasonDivisionTeams.drop();
 	}
 	
 	@After
@@ -119,9 +128,9 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (SEASON2, season2.getSeasonNumber().intValue());
 		assertEquals (SEASON3, season3.getSeasonNumber().intValue());
 
-		assertEquals (SEASON1, seasons.get(0).getSeasonNumber().intValue());
+		assertEquals (SEASON3, seasons.get(0).getSeasonNumber().intValue());
 		assertEquals (SEASON2, seasons.get(1).getSeasonNumber().intValue());
-		assertEquals (SEASON3, seasons.get(2).getSeasonNumber().intValue());
+		assertEquals (SEASON1, seasons.get(2).getSeasonNumber().intValue());
 	}
 
 	@Test
@@ -143,13 +152,14 @@ public class FootballResultsAnalyserMongoDAOTest {
 	public void shouldGetSeasons() {
 		// Given
 		Season<String> season1 = dao.addSeason(SEASON1);
-		Season<String> season2 = dao.addSeason(SEASON2);
 		Season<String> season3 = dao.addSeason(SEASON3);
-
+		Season<String> season2 = dao.addSeason(SEASON2);
+		
 		// When
 		Season<String> season1FromDb = dao.getSeason(SEASON1);
 		Season<String> season2FromDb = dao.getSeason(SEASON2);
 		Season<String> season3FromDb = dao.getSeason(SEASON3);
+		List<Season<String>> seasons = dao.getSeasons();
 		
 		// Then
 		assertTrue (season1 != season1FromDb);
@@ -160,6 +170,10 @@ public class FootballResultsAnalyserMongoDAOTest {
 
 		assertTrue (season3 != season3FromDb);
 		assertEquals (season3.getSeasonNumber(), season3FromDb.getSeasonNumber());
+		
+		assertEquals (new Integer(SEASON3), seasons.get(0).getSeasonNumber());
+		assertEquals (new Integer(SEASON2), seasons.get(1).getSeasonNumber());
+		assertEquals (new Integer(SEASON1), seasons.get(2).getSeasonNumber());
 	}
 
 	
@@ -498,4 +512,61 @@ public class FootballResultsAnalyserMongoDAOTest {
 		assertEquals (seasonDivisionTeam.getId(), updatedSeasonDivisionTeam.getId());
 	}
 
+	@Test
+	public void shouldGetSeasonDivisionsForSeason () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		Division<String> division2 = dao.addDivision(DIVISION2);
+		
+		// When (we have no saved season divisions for this season)
+		Set<SeasonDivision<String, String>> retrievedSeasonDivisions = dao.getDivisionsForSeason(season);
+		
+		// Then
+		assertEquals (0, retrievedSeasonDivisions.size());
+		
+		// When (we have one division for the season)
+		SeasonDivision<String, String> firstSeasonDivision = dao.addSeasonDivision(season, division, 2);
+		retrievedSeasonDivisions = dao.getDivisionsForSeason(season);
+		
+		// Then
+		assertEquals (1, retrievedSeasonDivisions.size());
+		
+		// When (we have a second division for the season)
+		SeasonDivision<String, String> secondSeasonDivision = dao.addSeasonDivision(season, division2, 2);
+		retrievedSeasonDivisions = dao.getDivisionsForSeason(season);
+		
+		// Then
+		assertEquals (2, retrievedSeasonDivisions.size());
+	}
+	
+	@Test
+	public void shouldGetSeasonDivisionTeamsForSeasonDivision () {
+		// Given
+		Season<String> season = dao.addSeason(SEASON1);
+		Division<String> division = dao.addDivision(DIVISION1);
+		SeasonDivision<String,String> seasonDivision = dao.addSeasonDivision(season, division, 0);
+		Team<String> team = dao.addTeam(TEAM1);
+		Team<String> team2 = dao.addTeam(TEAM2);
+		
+		// When (we have no saved season division teams for this season division)
+		Set<SeasonDivisionTeam<String, String, String>> retrievedSeasonDivisionTeams = dao.getTeamsForDivisionInSeason(seasonDivision);
+		
+		// Then
+		assertEquals (0, retrievedSeasonDivisionTeams.size());
+		
+		// When (we have one team for the season division)
+		SeasonDivisionTeam<String, String, String> firstSeasonDivisionTeam = dao.addSeasonDivisionTeam(seasonDivision, team);
+		retrievedSeasonDivisionTeams = dao.getTeamsForDivisionInSeason(seasonDivision);
+		
+		// Then
+		assertEquals (1, retrievedSeasonDivisionTeams.size());
+		
+		// When (we have a second team for the season division)
+		SeasonDivisionTeam<String, String, String> secondSeasonDivisionTeam = dao.addSeasonDivisionTeam(seasonDivision, team2);
+		retrievedSeasonDivisionTeams = dao.getTeamsForDivisionInSeason(seasonDivision);
+		
+		// Then
+		assertEquals (2, retrievedSeasonDivisionTeams.size());
+	}
 }
