@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
 import org.apache.log4j.Logger;
 import org.bson.types.ObjectId;
 
@@ -485,13 +488,17 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return fixtures;
 	}
 
+	@PostConstruct
 	@Override
 	public void startSession() {
+		logger.debug("Opening Mongo DB");
 		db = mongoClient.getDB(this.dbName);
 	}
 
+	@PreDestroy
 	@Override
 	public void closeSession() {
+		logger.debug("Closing Mongo DB");
 		mongoClient.close();
 	}
 	
