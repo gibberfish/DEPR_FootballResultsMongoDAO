@@ -486,6 +486,26 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	}
 
 	@Override
+	public List<Fixture<String>> getFixturesForDivisionInSeason(SeasonDivision<String, String> seasonDivision) {
+		List<Fixture<String>> fixtures = new ArrayList<Fixture<String>> ();
+		
+		DBCollection mongoFixures = db.getCollection(MONGO_FIXTURE);
+		
+		DBObject query = new BasicDBObject(SSN_NUM, seasonDivision.getSeason().getSeasonNumber())
+			.append(DIV_ID, seasonDivision.getDivision().getDivisionIdAsString());
+		
+		DBCursor fixturesCursor = mongoFixures.find(query);
+		
+		while(fixturesCursor.hasNext()) {
+			DBObject fixtureObject = fixturesCursor.next();
+			Fixture<String> fixture = mongoMapper.mapMongoToFixture (fixtureObject);
+			fixtures.add(fixture);
+		}
+		
+		return fixtures;
+	}
+	
+	@Override
 	public void startSession() {
 		db = mongoClient.getDB(this.dbName);
 	}
@@ -568,4 +588,5 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 	private KV kv(String key, Object value) {
 		return new KV(key, value);
 	}
+
 }
