@@ -488,7 +488,6 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return fixtures;
 	}
 
-	@PostConstruct
 	@Override
 	public List<Fixture<String>> getFixturesForDivisionInSeason(SeasonDivision<String, String> seasonDivision) {
 		List<Fixture<String>> fixtures = new ArrayList<Fixture<String>> ();
@@ -509,6 +508,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		return fixtures;
 	}
 	
+	@PostConstruct
 	@Override
 	public void startSession() {
 		logger.debug("Opening Mongo DB");
