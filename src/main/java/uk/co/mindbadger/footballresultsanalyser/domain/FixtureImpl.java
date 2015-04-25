@@ -1,5 +1,6 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 public class FixtureImpl implements Fixture<String> {
@@ -94,4 +95,16 @@ public class FixtureImpl implements Fixture<String> {
 		this.season = season;
 	}
 
+	@Override
+	public String toString () {
+		//TODO need to access the utils to format the date
+		String fixtureDate = "NO DATE";
+		if (this.fixtureDate != null) {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			fixtureDate = sdf.format(this.fixtureDate.getTime());
+		}
+		
+		return "FIXTURE on " + fixtureDate + " in " + division.getDivisionName() +
+				homeTeam.getTeamName() + " " + homeGoals + " v " + awayGoals + awayTeam.getTeamName();
+	}
 }
