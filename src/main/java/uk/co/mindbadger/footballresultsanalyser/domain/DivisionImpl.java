@@ -1,6 +1,6 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
-public class DivisionImpl implements Division<String> {
+public class DivisionImpl implements Division<String>, Comparable<Division<String>> {
 	private static final long serialVersionUID = -4631642049305209765L;
 	
 	private String divisionId;
@@ -29,5 +29,10 @@ public class DivisionImpl implements Division<String> {
 	@Override
 	public String getDivisionIdAsString() {
 		return divisionId;
+	}
+
+	@Override
+	public int compareTo(Division<String> o) {
+		return this.divisionName.compareTo(o.getDivisionName());
 	}
 }
