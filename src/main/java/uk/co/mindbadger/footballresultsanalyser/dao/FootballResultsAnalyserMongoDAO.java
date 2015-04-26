@@ -498,6 +498,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			.append(DIV_ID, seasonDivision.getDivision().getDivisionIdAsString());
 		
 		DBCursor fixturesCursor = mongoFixures.find(query);
+		fixturesCursor.sort(new BasicDBObject(FIXTURE_DATE,1));
 		
 		while(fixturesCursor.hasNext()) {
 			DBObject fixtureObject = fixturesCursor.next();
