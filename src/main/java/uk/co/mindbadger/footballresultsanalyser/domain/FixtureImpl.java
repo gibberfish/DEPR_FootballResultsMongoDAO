@@ -104,7 +104,13 @@ public class FixtureImpl implements Fixture<String> {
 			fixtureDate = sdf.format(this.fixtureDate.getTime());
 		}
 		
-		return "FIXTURE on " + fixtureDate + " in " + division.getDivisionName() +
-				homeTeam.getTeamName() + " " + homeGoals + " v " + awayGoals + awayTeam.getTeamName();
+		String homeGoalsString = "-";
+		if (homeGoals != null) homeGoalsString = homeGoals.toString();
+
+		String awayGoalsString = "-";
+		if (awayGoals != null) awayGoalsString = awayGoals.toString();
+
+		return "FIXTURE on " + fixtureDate + " in " + division.getDivisionName() + ": " +
+				homeTeam.getTeamName() + " " + homeGoalsString + " v " + awayGoalsString + " " + awayTeam.getTeamName();
 	}
 }
