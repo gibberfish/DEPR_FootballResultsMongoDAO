@@ -1,6 +1,6 @@
 package uk.co.mindbadger.footballresultsanalyser.domain;
 
-public class SeasonDivisionImpl implements SeasonDivision<String, String> {
+public class SeasonDivisionImpl implements SeasonDivision<String, String>, Comparable<SeasonDivisionImpl> {
 	private static final long serialVersionUID = -1409106637881070795L;
 	
 	private Division<String> division;
@@ -46,6 +46,16 @@ public class SeasonDivisionImpl implements SeasonDivision<String, String> {
 	@Override
 	public String getId() {
 		return this.id;
+	}
+
+	//TODO FINISH THIS
+	@Override
+	public int compareTo(SeasonDivisionImpl compareTo) {
+		if (compareTo.getDivisionPosition() != this.getDivisionPosition()) {
+//			return 
+		}
+		
+		return 0;
 	}
 }
 
