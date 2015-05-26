@@ -575,7 +575,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		}
 		
 		ObjectId idObject= new ObjectId(id);
-		DBObject idQueryObject = new BasicDBObject(ID, id);
+		DBObject idQueryObject = new BasicDBObject(ID, idObject);
 		
 		mongoCollection.update(idQueryObject, basicObject);
 	}
