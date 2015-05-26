@@ -573,9 +573,10 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 			basicObject.append(values[i].getKey(), values[i].getValue());
 		}
 		
-		DBObject idObject = new BasicDBObject(ID, id);
+		ObjectId idObject= new ObjectId(id);
+		DBObject idQueryObject = new BasicDBObject(ID, id);
 		
-		mongoCollection.update(idObject, basicObject);
+		mongoCollection.update(idQueryObject, basicObject);
 	}
 
 	private class KV {

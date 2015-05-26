@@ -97,7 +97,7 @@ public class FixtureImpl implements Fixture<String> {
 
 	@Override
 	public String toString () {
-		//TODO need to access the utils to format the date
+		//TODO #99 need to access the utils to format the date
 		String fixtureDate = "NO DATE";
 		if (this.fixtureDate != null) {
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");

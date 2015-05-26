@@ -85,7 +85,7 @@ public class MongoMapper {
 		String fixtureDateAsString = null;
 		if (mongoObject.get(FIXTURE_DATE) != null) {
 			fixtureDateAsString = mongoObject.get(FIXTURE_DATE).toString();
-			fixtureDate = Calendar.getInstance(); //TODO convert the string into a data
+			fixtureDate = Calendar.getInstance();
 			SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
 			try {
 				fixtureDate.setTime(sdf.parse(fixtureDateAsString));

@@ -48,7 +48,6 @@ public class SeasonDivisionImpl implements SeasonDivision<String, String> {
 		return this.id;
 	}
 
-	//TODO FINISH THIS
 	@Override
 	public int compareTo(SeasonDivision<String, String> compareTo) {
 		if (compareTo.getSeason().getSeasonNumber() != this.getSeason().getSeasonNumber()) {
