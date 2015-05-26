@@ -312,6 +312,7 @@ public class FootballResultsAnalyserMongoDAO implements	FootballResultsAnalyserD
 		DBObject query = new BasicDBObject();
 		query.put (FIXTURE_DATE,new BasicDBObject("$exists", true));
 		query.put (FIXTURE_DATE, new BasicDBObject ("$lt", today.getTime()));
+		query.put (HOME_GOALS, null);
 		
 		DBCursor fixturesCursor = mongoFixures.find(query);
 		
